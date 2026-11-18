@@ -24,6 +24,7 @@ import {
   setLocale,
   setLocation,
   setPrice,
+  setPeakValley,
   setShowCost,
   setThemePreference,
   setTtsVoice,
@@ -67,6 +68,8 @@ const SettingsContent = () => {
   const historyImport = useHistoryImport()
   const historyDelete = useHistoryDelete()
   const replacingHistory = useChatStore((state) => state.importingHistory)
+  // 必须在条件渲染之外订阅，否则切到「数据管理」时 hook 数量变化会让 React 崩溃
+  const showCost = useSettings((state) => state.showCost)
   const historyBusy = historyImport.busy || historyDelete.busy || replacingHistory
   return (
     <>
@@ -103,7 +106,8 @@ const SettingsContent = () => {
               <LocaleSetting />
               <TtsVoiceSetting />
               <CostSetting />
-              {useSettings((state) => state.showCost) ? <PriceSetting /> : null}
+              {showCost ? <PriceSetting /> : null}
+              {showCost ? <PeakValleySetting /> : null}
               <LocationSetting />
             </>
           ) : (
@@ -336,6 +340,31 @@ const CostSetting = () => {
           aria-label={t('settingsShowCost')}
           className={clsx(styles.switch, showCost && styles.switchOn)}
           onClick={() => setShowCost(!showCost)}
+        >
+          <span className={styles.switchThumb} />
+        </button>
+      }
+    />
+  )
+}
+
+/** 峰谷定价：空闲时段按高峰价的 5 折估算，与 DeepSeek 官方计费规则一致 */
+const PeakValleySetting = () => {
+  const t = useTranslate()
+  const peakValley = useSettings((state) => state.peakValley)
+  return (
+    <SettingCell
+      label={t('settingsPeakValley')}
+      description={t('settingsPeakValleyDescription')}
+      status={null}
+      action={
+        <button
+          type="button"
+          role="switch"
+          aria-checked={peakValley}
+          aria-label={t('settingsPeakValley')}
+          className={clsx(styles.switch, peakValley && styles.switchOn)}
+          onClick={() => setPeakValley(!peakValley)}
         >
           <span className={styles.switchThumb} />
         </button>

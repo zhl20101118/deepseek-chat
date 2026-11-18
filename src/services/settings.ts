@@ -13,11 +13,31 @@ export type ThinkingEffort = 'low' | 'high' | 'max'
 /** 自定义单价（元 / 百万 Token）；无法从服务端获取实时价格时手动输入 */
 export type PricePerMillion = { input: number; output: number }
 
-/** 内置默认单价（元 / 百万 Token）：deepseek-flash 缓存未命中的输入价与输出价 */
-export const DEFAULT_PRICE: PricePerMillion = { input: 1, output: 2 }
+/** 内置默认单价（元 / 百万 Token）：deepseek-flash 高峰时段的输入价与输出价 */
+export const DEFAULT_PRICE: PricePerMillion = { input: 2, output: 8 }
 
-/** 缓存命中输入按输入单价的 10% 计费，与 DeepSeek 定价一致 */
-export const CACHE_READ_DISCOUNT = 0.1
+/** 缓存命中的输入按输入单价的 2% 计费（官方：高峰 0.04 元 vs 未命中 2 元） */
+export const CACHE_READ_DISCOUNT = 0.02
+
+/** 空闲时段为高峰时段的一半 */
+export const VALLEY_DISCOUNT = 0.5
+
+/** 高峰时段（北京时间，分钟数）：周一至周五 9:00-12:00、14:00-18:00；周末与法定节假日全天空闲 */
+const PEAK_WINDOWS: { start: number; end: number }[] = [
+  { start: 9 * 60, end: 12 * 60 },
+  { start: 14 * 60, end: 18 * 60 },
+]
+
+/** 是否落在空闲时段：按北京时间判定，周末全天算空闲（法定节假日数据拿不到，按工作日处理） */
+export const isValleyTime = (time: number): boolean => {
+  const beijing = new Date(time + 8 * 60 * 60 * 1000)
+  const day = beijing.getUTCDay()
+  if (day === 0 || day === 6) {
+    return true
+  }
+  const minutes = beijing.getUTCHours() * 60 + beijing.getUTCMinutes()
+  return PEAK_WINDOWS.every(({ start, end }) => minutes < start || minutes >= end)
+}
 
 /** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、思考强度、费用展示、侧边栏收起状态 */
 type Settings = {
@@ -32,6 +52,8 @@ type Settings = {
   search: boolean
   /** 是否在回答下方展示本次消耗的费用估算 */
   showCost: boolean
+  /** 费用估算是否按峰谷时段计价（空闲时段按高峰价的 5 折） */
+  peakValley: boolean
   /** 每百万 Token 的自定义单价；未填写时为 null，按内置默认价计算 */
   price: PricePerMillion | null
   siderCollapsed: boolean
@@ -47,6 +69,7 @@ const KEYS = {
   thinkingEffort: 'chat-demo:thinking-effort',
   search: 'chat-demo:search',
   showCost: 'chat-demo:show-cost',
+  peakValley: 'chat-demo:peak-valley',
   price: 'chat-demo:price',
   siderCollapsed: 'chat-demo:sider-collapsed',
 } as const
@@ -108,14 +131,17 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
-/** 未保存过时默认最大思考强度 */
+/** 未保存过时默认高思考强度；low / high / max 都会被记住 */
 const initialThinkingEffort = (): ThinkingEffort => {
   const saved = read(KEYS.thinkingEffort)
-  return saved === 'low' || saved === 'high' ? saved : 'max'
+  return saved === 'low' || saved === 'max' ? saved : 'high'
 }
 
 /** 费用展示：未保存过时默认开启 */
 const initialShowCost = (): boolean => read(KEYS.showCost) !== 'false'
+
+/** 峰谷定价：未保存过时默认开启，估算结果更贴近实际扣费 */
+const initialPeakValley = (): boolean => read(KEYS.peakValley) !== 'false'
 
 /** 自定义单价；非法或缺失时为 null，按内置默认价计算 */
 const initialPrice = (): PricePerMillion | null => {
@@ -151,6 +177,7 @@ export const useSettings = create<Settings>(() => ({
   thinkingEffort: initialThinkingEffort(),
   search: read(KEYS.search) === 'true',
   showCost: initialShowCost(),
+  peakValley: initialPeakValley(),
   price: initialPrice(),
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
 }))
@@ -194,6 +221,11 @@ export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
 export const setShowCost = (showCost: boolean) => {
   write(KEYS.showCost, String(showCost))
   useSettings.setState({ showCost })
+}
+
+export const setPeakValley = (peakValley: boolean) => {
+  write(KEYS.peakValley, String(peakValley))
+  useSettings.setState({ peakValley })
 }
 
 export const setPrice = (price: PricePerMillion | null) => {

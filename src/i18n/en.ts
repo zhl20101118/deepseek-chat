@@ -97,9 +97,12 @@ export const en = {
   settingsShowCostDescription: 'Show the estimated cost under each reply',
   settingsCustomPrice: 'Custom price',
   settingsCustomPriceDescription:
-    'CNY per 1M tokens (input, output). Leave both blank to use the built-in price.',
+    'CNY per 1M tokens (input, output) at peak hours. Leave both blank to use the built-in price.',
   settingsPriceInput: 'Input price',
   settingsPriceOutput: 'Output price',
+  settingsPeakValley: 'Time-of-use pricing',
+  settingsPeakValleyDescription:
+    'Peak hours are 09:00-12:00 and 14:00-18:00 Beijing time on working days; other times (incl. weekends) are estimated at 50% of the peak price.',
   settingsLocation: 'Location',
   settingsLocationProvince: 'Select province/region',
   settingsLocationCity: 'Select city',
@@ -153,6 +156,8 @@ export const en = {
   thinkingEffortHigh: 'High',
   thinkingEffortMax: 'Max',
   messageCost: 'Cost ¥{amount}',
+  costPeak: 'Peak',
+  costValley: 'Off-peak',
   messageCostDetail: 'Input {input} / output {output} tokens (estimated)',
   deactivatedSearchTooltip: 'Search the web when necessary',
   search: 'Search',

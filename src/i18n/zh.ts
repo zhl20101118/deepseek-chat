@@ -91,9 +91,13 @@ export const zh = {
   settingsShowCost: '显示消耗费用',
   settingsShowCostDescription: '在每条回答下方展示本次请求的费用估算',
   settingsCustomPrice: '自定义单价',
-  settingsCustomPriceDescription: '单位为元 / 百万 Token（输入、输出），两项留空则按内置默认价计算',
+  settingsCustomPriceDescription:
+    '单位为元 / 百万 Token（输入、输出），填高峰时段单价，两项留空则按内置默认价计算',
   settingsPriceInput: '输入单价',
   settingsPriceOutput: '输出单价',
+  settingsPeakValley: '峰谷定价',
+  settingsPeakValleyDescription:
+    '北京时间工作日 9:00-12:00、14:00-18:00 为高峰，其余时段（含周末）按高峰价 5 折估算',
   settingsLocation: '位置信息',
   settingsLocationProvince: '请选择省份/地区',
   settingsLocationCity: '请选择市',
@@ -144,6 +148,8 @@ export const zh = {
   thinkingEffortHigh: '高',
   thinkingEffortMax: '最大',
   messageCost: '费用 ¥{amount}',
+  costPeak: '高峰',
+  costValley: '空闲',
   messageCostDetail: '输入 {input} / 输出 {output} tokens（估算）',
   deactivatedSearchTooltip: '按需搜索网页',
   search: '智能搜索',

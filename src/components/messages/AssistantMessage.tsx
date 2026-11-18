@@ -11,6 +11,8 @@ import type { MessageUsage } from '../../services/api/types.js'
 import {
   CACHE_READ_DISCOUNT,
   DEFAULT_PRICE,
+  VALLEY_DISCOUNT,
+  isValleyTime,
   useSettings,
   type PricePerMillion,
 } from '../../services/settings.js'
@@ -35,16 +37,23 @@ const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
 
 /**
  * 按本条回答的 usage 估算费用（元）：未命中缓存与写入缓存按输入价、命中缓存按折后输入价、其余按输出价。
+ * 开启峰谷定价且请求落在空闲时段时按高峰价的 5 折计。
  * 服务端没有下发用量时返回 null，不展示费用。
  */
 const estimateCost = (
   usage: MessageUsage | undefined,
-  price: PricePerMillion | null
+  price: PricePerMillion | null,
+  time: number,
+  peakValley: boolean
 ): number | null => {
   if (!usage) {
     return null
   }
-  const unit = price ?? DEFAULT_PRICE
+  const peak = price ?? DEFAULT_PRICE
+  const unit =
+    peakValley && isValleyTime(time)
+      ? { input: peak.input * VALLEY_DISCOUNT, output: peak.output * VALLEY_DISCOUNT }
+      : peak
   const freshInput = usage.input_tokens + usage.cache_creation_input_tokens
   const cachedInput = usage.cache_read_input_tokens * CACHE_READ_DISCOUNT
   return ((freshInput + cachedInput) * unit.input + usage.output_tokens * unit.output) / 1_000_000
@@ -75,7 +84,11 @@ export const AssistantMessage = memo(function AssistantMessage({
   const refused = message.stopReason === 'refusal'
   const showCost = useSettings((state) => state.showCost)
   const price = useSettings((state) => state.price)
-  const cost = showCost && !refused ? estimateCost(message.usage, price) : null
+  const peakValley = useSettings((state) => state.peakValley)
+  // 按回复创建时刻判定时段，费用后面标注当次用的是高峰价还是空闲价
+  const inValley = peakValley && isValleyTime(message.createdAt)
+  const cost =
+    showCost && !refused ? estimateCost(message.usage, price, message.createdAt, peakValley) : null
   const answer = refused ? null : view.answer
   const responseText = [answer?.text, notice?.presentation === 'response' ? notice.text : null]
     .filter(Boolean)
@@ -177,6 +190,7 @@ export const AssistantMessage = memo(function AssistantMessage({
               })}
             >
               {t('messageCost', { amount: cost < 0.01 ? cost.toFixed(4) : cost.toFixed(2) })}
+              {peakValley ? ` · ${t(inValley ? 'costValley' : 'costPeak')}` : ''}
             </span>
           ) : null}
           <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
