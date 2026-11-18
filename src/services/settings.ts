@@ -7,7 +7,13 @@ export type Locale = 'zh-CN' | 'en-US'
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 思考强度（reasoning_effort）；low / high / max，max 为最大思考强度 */
+export type ThinkingEffort = 'low' | 'high' | 'max'
+
+/** 自定义单价（元 / 百万 Token）；无法从服务端获取实时价格时手动输入 */
+export type PricePerMillion = { input: number; output: number }
+
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、思考强度、费用展示、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -15,7 +21,13 @@ type Settings = {
   location: UserLocation | null
   ttsVoice: TtsVoice
   thinking: boolean
+  /** 深度思考开启时的思考强度 */
+  thinkingEffort: ThinkingEffort
   search: boolean
+  /** 是否在回答下方展示本次消耗的费用估算 */
+  showCost: boolean
+  /** 每百万 Token 的自定义单价；未填写时为 null，按内置默认价计算 */
+  price: PricePerMillion | null
   siderCollapsed: boolean
 }
 
@@ -26,7 +38,10 @@ const KEYS = {
   themePreference: 'chat-demo:theme-preference',
   ttsVoice: 'chat-demo:tts-voice',
   thinking: 'chat-demo:thinking',
+  thinkingEffort: 'chat-demo:thinking-effort',
   search: 'chat-demo:search',
+  showCost: 'chat-demo:show-cost',
+  price: 'chat-demo:price',
   siderCollapsed: 'chat-demo:sider-collapsed',
 } as const
 
@@ -87,6 +102,39 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+/** 未保存过时默认最大思考强度 */
+const initialThinkingEffort = (): ThinkingEffort => {
+  const saved = read(KEYS.thinkingEffort)
+  return saved === 'low' || saved === 'high' ? saved : 'max'
+}
+
+/** 费用展示：未保存过时默认开启 */
+const initialShowCost = (): boolean => read(KEYS.showCost) !== 'false'
+
+/** 自定义单价；非法或缺失时为 null，按内置默认价计算 */
+const initialPrice = (): PricePerMillion | null => {
+  try {
+    const parsed: unknown = JSON.parse(read(KEYS.price) ?? 'null')
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null
+    }
+    const { input, output } = parsed as Partial<PricePerMillion>
+    if (
+      typeof input === 'number' &&
+      typeof output === 'number' &&
+      Number.isFinite(input) &&
+      Number.isFinite(output) &&
+      input >= 0 &&
+      output >= 0
+    ) {
+      return { input, output }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
@@ -94,7 +142,10 @@ export const useSettings = create<Settings>(() => ({
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
+  thinkingEffort: initialThinkingEffort(),
   search: read(KEYS.search) === 'true',
+  showCost: initialShowCost(),
+  price: initialPrice(),
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
 }))
 
@@ -127,6 +178,21 @@ export const setApiKey = (apiKey: string | null) => {
 export const setThinking = (thinking: boolean) => {
   write(KEYS.thinking, String(thinking))
   useSettings.setState({ thinking })
+}
+
+export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
+  write(KEYS.thinkingEffort, thinkingEffort)
+  useSettings.setState({ thinkingEffort })
+}
+
+export const setShowCost = (showCost: boolean) => {
+  write(KEYS.showCost, String(showCost))
+  useSettings.setState({ showCost })
+}
+
+export const setPrice = (price: PricePerMillion | null) => {
+  write(KEYS.price, price ? JSON.stringify(price) : null)
+  useSettings.setState({ price })
 }
 
 export const setSearch = (search: boolean) => {
