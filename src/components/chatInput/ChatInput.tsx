@@ -7,7 +7,13 @@ import {
   IconStopFill16,
   IconThinkOutline14,
 } from '../base/icons.js'
-import { setSearch, setThinking, useSettings } from '../../services/settings.js'
+import {
+  setSearch,
+  setThinking,
+  setThinkingEffort,
+  useSettings,
+  type ThinkingEffort,
+} from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
@@ -22,6 +28,7 @@ import {
 } from '../../services/chat/drafts.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import { IconButton } from '../base/IconButton.js'
+import { Select } from '../base/Select.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { ensureApiKey } from '../settings/settingsDialogState.js'
 import { DragMask, useFileDrop } from './DragMask.js'
@@ -50,6 +57,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     (state) => sessionId !== null && Object.hasOwn(state.streaming, sessionId)
   )
   const thinking = useSettings((state) => state.thinking)
+  const thinkingEffort = useSettings((state) => state.thinkingEffort)
   const importingHistory = useChatStore((state) => state.importingHistory)
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
@@ -214,6 +222,20 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               <span className={styles.toggleLabel}>{t('thinkingSwitch')}</span>
             </button>
           </Tooltip>
+          {/* 思考强度：仅在开启深度思考时出现，随请求携带 reasoning_effort */}
+          {thinking ? (
+            <Select<ThinkingEffort>
+              ariaLabel={t('thinkingEffort')}
+              className={styles.effortSelect}
+              value={thinkingEffort}
+              options={[
+                { value: 'low', label: t('thinkingEffortLow') },
+                { value: 'high', label: t('thinkingEffortHigh') },
+                { value: 'max', label: t('thinkingEffortMax') },
+              ]}
+              onChange={setThinkingEffort}
+            />
+          ) : null}
           <Tooltip content={t('deactivatedSearchTooltip')}>
             <button
               type="button"

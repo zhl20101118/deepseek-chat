@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "deepseek-chat",
+  "compatibility_date": "2026-11-17",
+  // 纯静态站点：构建产物直接由 Workers 静态资源托管，未知路径回退到 index.html
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  // 保住线上自定义域名，部署时不会被移除
+  "routes": [{ "pattern": "dschat.zhl2010.ccwu.cc", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

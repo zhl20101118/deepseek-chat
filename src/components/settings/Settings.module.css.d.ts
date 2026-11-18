@@ -15,6 +15,11 @@ declare const styles: {
   readonly "provinceSelect": string;
   readonly "citySelect": string;
   readonly "regionSelect": string;
+  readonly "switch": string;
+  readonly "switchOn": string;
+  readonly "switchThumb": string;
+  readonly "priceInputs": string;
+  readonly "priceInput": string;
   readonly "theme": string;
   readonly "themeOptions": string;
   readonly "themeOption": string;

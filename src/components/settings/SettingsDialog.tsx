@@ -19,9 +19,12 @@ import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import {
+  DEFAULT_PRICE,
   isChineseBrowser,
   setLocale,
   setLocation,
+  setPrice,
+  setShowCost,
   setThemePreference,
   setTtsVoice,
   useSettings,
@@ -99,6 +102,8 @@ const SettingsContent = () => {
               <ThemeSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
+              <CostSetting />
+              {useSettings((state) => state.showCost) ? <PriceSetting /> : null}
               <LocationSetting />
             </>
           ) : (
@@ -309,6 +314,90 @@ const TtsVoiceSetting = () => {
           ]}
           onChange={setTtsVoice}
         />
+      }
+    />
+  )
+}
+
+/** 费用展示：开启后每条回答下方显示本次消耗的费用估算 */
+const CostSetting = () => {
+  const t = useTranslate()
+  const showCost = useSettings((state) => state.showCost)
+  return (
+    <SettingCell
+      label={t('settingsShowCost')}
+      description={t('settingsShowCostDescription')}
+      status={null}
+      action={
+        <button
+          type="button"
+          role="switch"
+          aria-checked={showCost}
+          aria-label={t('settingsShowCost')}
+          className={clsx(styles.switch, showCost && styles.switchOn)}
+          onClick={() => setShowCost(!showCost)}
+        >
+          <span className={styles.switchThumb} />
+        </button>
+      }
+    />
+  )
+}
+
+/** 每百万 Token 的输入 / 输出单价；两项留空即恢复内置默认价 */
+const PriceSetting = () => {
+  const t = useTranslate()
+  const price = useSettings((state) => state.price)
+  const [input, setInput] = useState(() => (price ? String(price.input) : ''))
+  const [output, setOutput] = useState(() => (price ? String(price.output) : ''))
+
+  const commit = (nextInput: string, nextOutput: string) => {
+    setInput(nextInput)
+    setOutput(nextOutput)
+    if (nextInput.trim() === '' && nextOutput.trim() === '') {
+      setPrice(null)
+      return
+    }
+    const parse = (raw: string, fallback: number) => {
+      const value = Number(raw.trim())
+      return raw.trim() !== '' && Number.isFinite(value) && value >= 0 ? value : fallback
+    }
+    setPrice({
+      input: parse(nextInput, DEFAULT_PRICE.input),
+      output: parse(nextOutput, DEFAULT_PRICE.output),
+    })
+  }
+
+  return (
+    <SettingCell
+      label={t('settingsCustomPrice')}
+      description={t('settingsCustomPriceDescription')}
+      status={null}
+      action={
+        <div className={styles.priceInputs}>
+          <input
+            type="number"
+            min={0}
+            step="0.1"
+            inputMode="decimal"
+            aria-label={t('settingsPriceInput')}
+            className={styles.priceInput}
+            placeholder={String(DEFAULT_PRICE.input)}
+            value={input}
+            onChange={(event) => commit(event.target.value, output)}
+          />
+          <input
+            type="number"
+            min={0}
+            step="0.1"
+            inputMode="decimal"
+            aria-label={t('settingsPriceOutput')}
+            className={styles.priceInput}
+            placeholder={String(DEFAULT_PRICE.output)}
+            value={output}
+            onChange={(event) => commit(input, event.target.value)}
+          />
+        </div>
       }
     />
   )

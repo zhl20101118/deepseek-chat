@@ -13,6 +13,12 @@ export type ThinkingEffort = 'low' | 'high' | 'max'
 /** 自定义单价（元 / 百万 Token）；无法从服务端获取实时价格时手动输入 */
 export type PricePerMillion = { input: number; output: number }
 
+/** 内置默认单价（元 / 百万 Token）：deepseek-flash 缓存未命中的输入价与输出价 */
+export const DEFAULT_PRICE: PricePerMillion = { input: 1, output: 2 }
+
+/** 缓存命中输入按输入单价的 10% 计费，与 DeepSeek 定价一致 */
+export const CACHE_READ_DISCOUNT = 0.1
+
 /** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、思考强度、费用展示、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null

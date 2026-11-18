@@ -104,6 +104,15 @@
   opacity: 1;
 }
 
+/* 费用估算：跟随分支切换行展示，光标提示可悬停看 token 明细 */
+.cost {
+  flex-shrink: 0;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
 .continueButton {
   margin-left: auto;
 }

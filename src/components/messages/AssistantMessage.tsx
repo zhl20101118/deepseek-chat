@@ -7,6 +7,13 @@ import { canContinueReply } from '../../services/chat/reply.js'
 import { continueReply, regenerateReply } from '../../services/chat/store.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import type { AssistantMessage as AssistantMessageType } from '../../services/chat/types.js'
+import type { MessageUsage } from '../../services/api/types.js'
+import {
+  CACHE_READ_DISCOUNT,
+  DEFAULT_PRICE,
+  useSettings,
+  type PricePerMillion,
+} from '../../services/settings.js'
 import { openSettings } from '../settings/settingsDialogState.js'
 import { IconButton } from '../base/IconButton.js'
 import { Button } from '../base/Button.js'
@@ -25,6 +32,23 @@ import {
 import styles from './AssistantMessage.module.css'
 
 const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
+
+/**
+ * 按本条回答的 usage 估算费用（元）：未命中缓存与写入缓存按输入价、命中缓存按折后输入价、其余按输出价。
+ * 服务端没有下发用量时返回 null，不展示费用。
+ */
+const estimateCost = (
+  usage: MessageUsage | undefined,
+  price: PricePerMillion | null
+): number | null => {
+  if (!usage) {
+    return null
+  }
+  const unit = price ?? DEFAULT_PRICE
+  const freshInput = usage.input_tokens + usage.cache_creation_input_tokens
+  const cachedInput = usage.cache_read_input_tokens * CACHE_READ_DISCOUNT
+  return ((freshInput + cachedInput) * unit.input + usage.output_tokens * unit.output) / 1_000_000
+}
 
 export const AssistantMessage = memo(function AssistantMessage({
   sessionId,
@@ -49,6 +73,9 @@ export const AssistantMessage = memo(function AssistantMessage({
   const notice = streaming ? null : describeReply(message)
   // 安全拒绝：已下发的思考与正文按协议丢弃，只显示模板答复。
   const refused = message.stopReason === 'refusal'
+  const showCost = useSettings((state) => state.showCost)
+  const price = useSettings((state) => state.price)
+  const cost = showCost && !refused ? estimateCost(message.usage, price) : null
   const answer = refused ? null : view.answer
   const responseText = [answer?.text, notice?.presentation === 'response' ? notice.text : null]
     .filter(Boolean)
@@ -141,6 +168,17 @@ export const AssistantMessage = memo(function AssistantMessage({
       {streaming ? null : (
         <div className={styles.bottom}>
           <BranchSwitcher versions={versions} disabled={busy} onSelect={onSelectVersion} />
+          {cost !== null ? (
+            <span
+              className={styles.cost}
+              title={t('messageCostDetail', {
+                input: message.usage?.input_tokens ?? 0,
+                output: message.usage?.output_tokens ?? 0,
+              })}
+            >
+              {t('messageCost', { amount: cost < 0.01 ? cost.toFixed(4) : cost.toFixed(2) })}
+            </span>
+          ) : null}
           <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
             {copyText ? <CopyButton text={copyText} /> : null}
             {responseText && !refused ? (

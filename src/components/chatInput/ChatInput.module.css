@@ -297,6 +297,20 @@
   }
 }
 
+/* 思考强度选择器：与开关同高、同描边，放在深度思考开关右侧 */
+.effortSelect {
+  flex-shrink: 0;
+  min-width: 76px;
+  height: 34px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 18px;
+  background: transparent;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
 .right {
   display: flex;
   flex-shrink: 0;

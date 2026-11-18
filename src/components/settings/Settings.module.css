@@ -146,6 +146,75 @@
   max-width: min(285px, 100%);
 }
 
+/* 费用展示开关：40x22 轨道 + 18px 圆头 */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 11px;
+  background-color: var(--dsw-alias-border-l2);
+  cursor: pointer;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.switchOn {
+  background-color: var(--dsw-alias-brand-primary);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--dsw-alias-bg-base);
+  transition: transform var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.switchOn .switchThumb {
+  transform: translateX(18px);
+}
+
+.switch:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill);
+}
+
+/* 自定义单价：输入 / 输出两个并排数字框，单位为元 / 百万 Token */
+.priceInputs {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceInput {
+  box-sizing: border-box;
+  width: 96px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  outline: none;
+
+  &::placeholder {
+    color: var(--dsw-alias-label-tertiary);
+  }
+
+  &:focus {
+    border-color: var(--dsw-alias-brand-primary);
+  }
+}
+
 .theme {
   flex-shrink: 0;
   margin-top: 10px;
