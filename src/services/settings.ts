@@ -54,6 +54,8 @@ type Settings = {
   thinkingEffort: ThinkingEffort
   /** 新会话默认使用的对话模式；已有会话各自记 mode */
   mode: ChatMode
+  /** 双模式开关；关闭后隐藏模式切换，所有对话按普通模式回复 */
+  dualMode: boolean
   search: boolean
   /** 是否在回答下方展示本次消耗的费用估算 */
   showCost: boolean
@@ -73,6 +75,7 @@ const KEYS = {
   thinking: 'chat-demo:thinking',
   thinkingEffort: 'chat-demo:thinking-effort',
   mode: 'chat-demo:mode',
+  dualMode: 'chat-demo:dual-mode',
   search: 'chat-demo:search',
   showCost: 'chat-demo:show-cost',
   peakValley: 'chat-demo:peak-valley',
@@ -146,6 +149,9 @@ const initialThinkingEffort = (): ThinkingEffort => {
 /** 未保存过时默认普通模式 */
 const initialMode = (): ChatMode => (read(KEYS.mode) === 'oi' ? 'oi' : 'normal')
 
+/** 双模式：未保存过时默认开启，关闭后只剩普通模式 */
+const initialDualMode = (): boolean => read(KEYS.dualMode) !== 'false'
+
 /** 费用展示：未保存过时默认开启 */
 const initialShowCost = (): boolean => read(KEYS.showCost) !== 'false'
 
@@ -185,6 +191,7 @@ export const useSettings = create<Settings>(() => ({
   thinking: read(KEYS.thinking) === 'true',
   thinkingEffort: initialThinkingEffort(),
   mode: initialMode(),
+  dualMode: initialDualMode(),
   search: read(KEYS.search) === 'true',
   showCost: initialShowCost(),
   peakValley: initialPeakValley(),
@@ -232,6 +239,12 @@ export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
 export const setMode = (mode: ChatMode) => {
   write(KEYS.mode, mode)
   useSettings.setState({ mode })
+}
+
+/** 关闭双模式后输入区不再显示模式切换，请求也一律走普通提示词 */
+export const setDualMode = (dualMode: boolean) => {
+  write(KEYS.dualMode, String(dualMode))
+  useSettings.setState({ dualMode })
 }
 
 export const setShowCost = (showCost: boolean) => {

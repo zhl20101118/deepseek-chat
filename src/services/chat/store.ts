@@ -1015,8 +1015,10 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           useSettings.getState().apiKey ?? '',
           {
             model: initial.model ?? MODEL,
-            // system 按会话模式取，同一会话内恒定，前缀缓存不受影响
-            system: systemPromptFor(getSession(sessionId)?.mode),
+            // system 按会话模式取，同一会话内恒定，前缀缓存不受影响；双模式关闭时一律普通提示词
+            system: systemPromptFor(
+              useSettings.getState().dualMode ? getSession(sessionId)?.mode : 'normal'
+            ),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             // 思考强度仅在开启深度思考时携带，缺省按默认的高思考强度请求

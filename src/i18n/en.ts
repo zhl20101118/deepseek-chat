@@ -93,6 +93,9 @@ export const en = {
   settingsTtsVoice: 'Read-aloud voice',
   settingsTtsVoiceStella: 'Stella (female)',
   settingsTtsVoiceTide: 'Tide (male)',
+  settingsDualMode: 'Dual mode (Normal / OI)',
+  settingsDualModeDescription:
+    'Turn off to hide the mode switch and reply in normal mode only',
   settingsShowCost: 'Show cost',
   settingsShowCostDescription: 'Show the estimated cost under each reply',
   settingsCustomPrice: 'Custom price',

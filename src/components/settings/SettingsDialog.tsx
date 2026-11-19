@@ -21,6 +21,7 @@ import { regionCodes, getRegionName, provinces } from '../../services/location.j
 import {
   DEFAULT_PRICE,
   isChineseBrowser,
+  setDualMode,
   setLocale,
   setLocation,
   setPrice,
@@ -105,6 +106,7 @@ const SettingsContent = () => {
               <ThemeSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
+              <DualModeSetting />
               <CostSetting />
               {showCost ? <PriceSetting /> : null}
               {showCost ? <PeakValleySetting /> : null}
@@ -318,6 +320,31 @@ const TtsVoiceSetting = () => {
           ]}
           onChange={setTtsVoice}
         />
+      }
+    />
+  )
+}
+
+/** 双模式开关：关闭后输入区不再出现模式切换，所有对话按普通模式回复 */
+const DualModeSetting = () => {
+  const t = useTranslate()
+  const dualMode = useSettings((state) => state.dualMode)
+  return (
+    <SettingCell
+      label={t('settingsDualMode')}
+      description={t('settingsDualModeDescription')}
+      status={null}
+      action={
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dualMode}
+          aria-label={t('settingsDualMode')}
+          className={clsx(styles.switch, dualMode && styles.switchOn)}
+          onClick={() => setDualMode(!dualMode)}
+        >
+          <span className={styles.switchThumb} />
+        </button>
       }
     />
   )

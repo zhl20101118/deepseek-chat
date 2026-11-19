@@ -88,6 +88,8 @@ export const zh = {
   settingsTtsVoice: '朗读音色',
   settingsTtsVoiceStella: '海星（女声）',
   settingsTtsVoiceTide: '暗潮（男声）',
+  settingsDualMode: '双模式（普通 / OI）',
+  settingsDualModeDescription: '关闭后输入区不再显示模式切换，所有对话按普通模式回复',
   settingsShowCost: '显示消耗费用',
   settingsShowCostDescription: '在每条回答下方展示本次请求的费用估算',
   settingsCustomPrice: '自定义单价',
