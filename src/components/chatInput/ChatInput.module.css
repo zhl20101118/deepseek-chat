@@ -297,8 +297,9 @@
   }
 }
 
-/* 思考强度选择器：与开关同高、同描边，放在深度思考开关右侧 */
-.effortSelect {
+/* 模式与思考强度选择器：与开关同高、同描边，混在功能开关这一排里 */
+.effortSelect,
+.modeSelect {
   flex-shrink: 0;
   min-width: 76px;
   height: 34px;

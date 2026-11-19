@@ -8,14 +8,16 @@ import {
   IconThinkOutline14,
 } from '../base/icons.js'
 import {
+  setMode,
   setSearch,
   setThinking,
   setThinkingEffort,
   useSettings,
+  type ChatMode,
   type ThinkingEffort,
 } from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
-import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
+import { changeSessionMode, sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
   addDraftFiles,
   EMPTY_DRAFT,
@@ -58,6 +60,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   )
   const thinking = useSettings((state) => state.thinking)
   const thinkingEffort = useSettings((state) => state.thinkingEffort)
+  // 对话模式以会话为准；会话还没建（欢迎页）时读全局默认值
+  const defaultMode = useSettings((state) => state.mode)
+  const sessionMode = useChatStore((state) =>
+    sessionId === null ? undefined : state.sessionCache[sessionId]?.mode
+  )
+  const mode = sessionMode ?? defaultMode
   const importingHistory = useChatStore((state) => state.importingHistory)
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
@@ -107,6 +115,14 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     },
     [sessionId]
   )
+  /** 切换对话模式：已有会话记在会话上，欢迎页（新对话）只更新默认值 */
+  const changeMode = (next: ChatMode) => {
+    if (sessionId === null) {
+      setMode(next)
+    } else {
+      changeSessionMode(sessionId, next)
+    }
+  }
   const dragging = useFileDrop(acceptFiles)
 
   /** 转写结果插入到光标处，并把光标移到插入内容之后 */
@@ -210,6 +226,18 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       <div className={styles.functionRow}>
         {/* 深度思考 / 智能搜索开关，tooltip 在按钮上方 */}
         <div ref={togglesRef} className={styles.toggles}>
+          {/* 对话模式：决定本会话使用的 system 提示词，普通模式即原样 */}
+          <Select<ChatMode>
+            ariaLabel={t('chatMode')}
+            className={styles.modeSelect}
+            value={mode}
+            disabled={importingHistory}
+            options={[
+              { value: 'normal', label: t('chatModeNormal') },
+              { value: 'oi', label: t('chatModeOi') },
+            ]}
+            onChange={changeMode}
+          />
           <Tooltip content={t('deactivatedThinkTooltip')}>
             <button
               type="button"

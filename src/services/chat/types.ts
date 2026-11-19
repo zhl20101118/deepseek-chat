@@ -8,7 +8,7 @@ import type {
   StopReason,
   TextCitation,
 } from '../api/types.js'
-import type { ThinkingEffort } from '../settings.js'
+import type { ChatMode, ThinkingEffort } from '../settings.js'
 
 /**
  * 消息附件。id 是本地标识（IndexedDB files 表的主键，原件按它存储，所有引用同一 id 的消息共用一份），
@@ -111,6 +111,8 @@ export type Message = UserMessage | AssistantMessage
 export type Session = {
   id: string
   title: string
+  /** 对话模式，决定 system 提示词；历史数据缺省为普通模式 */
+  mode?: ChatMode
   createdAt: number
   updatedAt: number
   /** 包含所有分支的消息，按创建顺序存储。 */

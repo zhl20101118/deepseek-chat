@@ -4,7 +4,7 @@ import { ApiError, streamMessage } from '../api/client.js'
 import type { ChatModel, CreateMessageRequest } from '../api/types.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
-import { useSettings } from '../settings.js'
+import { setMode, useSettings, type ChatMode } from '../settings.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
 import * as db from './db.js'
 import {
@@ -15,6 +15,7 @@ import {
   prepareDraftMessage,
 } from './drafts.js'
 import { createLatestReminder } from './latestReminder.js'
+import { systemPromptFor } from './prompts.js'
 import {
   applyEvent,
   canContinueReply,
@@ -34,8 +35,6 @@ import {
 
 /** deepseek-flash 同时支持深度思考与图片输入 */
 const MODEL: ChatModel = 'deepseek-flash'
-/** 所有生成请求统一携带的助手身份说明 */
-const SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
 /** 保留最近打开的详情；当前会话、生成中及尚未成功保存的会话不淘汰。 */
 const SESSION_CACHE_LIMIT = 5
 /** 安全审核固定开启，所有请求都走扩展模式 */
@@ -478,6 +477,18 @@ export const renameSession = (id: string, title: string) => {
   }
 }
 
+/** 切换会话的对话模式：会话自己记一份，同时更新默认值供后续新会话使用 */
+export const changeSessionMode = (id: string, mode: ChatMode) => {
+  if (get().importingHistory || deletingSessions.has(id)) {
+    return
+  }
+  setMode(mode)
+  if (getSession(id)) {
+    updateSession(id, (session) => (session.mode === mode ? session : { ...session, mode }))
+    persist(id)
+  }
+}
+
 /**
  * 删除会话；本地原件仅在没有其他会话引用时清理。远端文件不删：导入、编辑、重新生成都会复用同一个附件，
  * 同一服务端文件可能被多个会话引用，不维护引用计数。
@@ -567,6 +578,8 @@ export const sendMessage = (targetSessionId: string | null) => {
     const session: Session = {
       id: createId(),
       title: '',
+      // 新会话继承当前选中的模式，之后这个会话固定用它
+      mode: useSettings.getState().mode,
       createdAt: now,
       updatedAt: now,
       messages: [],
@@ -1002,12 +1015,13 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           useSettings.getState().apiKey ?? '',
           {
             model: initial.model ?? MODEL,
-            system: SYSTEM_PROMPT,
+            // system 按会话模式取，同一会话内恒定，前缀缓存不受影响
+            system: systemPromptFor(getSession(sessionId)?.mode),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
-            // 思考强度仅在开启深度思考时携带，缺省按 max 请求
+            // 思考强度仅在开启深度思考时携带，缺省按默认的高思考强度请求
             ...(initial.thinking
-              ? { reasoning_effort: initial.thinkingEffort ?? ('max' as const) }
+              ? { reasoning_effort: initial.thinkingEffort ?? ('high' as const) }
               : {}),
             safety_check: SAFETY_CHECK,
             tools: serverTools(initial.search ?? false),

@@ -10,6 +10,9 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 思考强度（reasoning_effort）；low / high / max，max 为最大思考强度 */
 export type ThinkingEffort = 'low' | 'high' | 'max'
 
+/** 对话模式：普通沿用原样，oi 面向信息学竞赛；这里存新会话的默认值，每个会话自己记一份 */
+export type ChatMode = 'normal' | 'oi'
+
 /** 自定义单价（元 / 百万 Token）；无法从服务端获取实时价格时手动输入 */
 export type PricePerMillion = { input: number; output: number }
 
@@ -49,6 +52,8 @@ type Settings = {
   thinking: boolean
   /** 深度思考开启时的思考强度 */
   thinkingEffort: ThinkingEffort
+  /** 新会话默认使用的对话模式；已有会话各自记 mode */
+  mode: ChatMode
   search: boolean
   /** 是否在回答下方展示本次消耗的费用估算 */
   showCost: boolean
@@ -67,6 +72,7 @@ const KEYS = {
   ttsVoice: 'chat-demo:tts-voice',
   thinking: 'chat-demo:thinking',
   thinkingEffort: 'chat-demo:thinking-effort',
+  mode: 'chat-demo:mode',
   search: 'chat-demo:search',
   showCost: 'chat-demo:show-cost',
   peakValley: 'chat-demo:peak-valley',
@@ -137,6 +143,9 @@ const initialThinkingEffort = (): ThinkingEffort => {
   return saved === 'low' || saved === 'max' ? saved : 'high'
 }
 
+/** 未保存过时默认普通模式 */
+const initialMode = (): ChatMode => (read(KEYS.mode) === 'oi' ? 'oi' : 'normal')
+
 /** 费用展示：未保存过时默认开启 */
 const initialShowCost = (): boolean => read(KEYS.showCost) !== 'false'
 
@@ -175,6 +184,7 @@ export const useSettings = create<Settings>(() => ({
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
   thinkingEffort: initialThinkingEffort(),
+  mode: initialMode(),
   search: read(KEYS.search) === 'true',
   showCost: initialShowCost(),
   peakValley: initialPeakValley(),
@@ -216,6 +226,12 @@ export const setThinking = (thinking: boolean) => {
 export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
   write(KEYS.thinkingEffort, thinkingEffort)
   useSettings.setState({ thinkingEffort })
+}
+
+/** 记住模式，下一个新会话沿用 */
+export const setMode = (mode: ChatMode) => {
+  write(KEYS.mode, mode)
+  useSettings.setState({ mode })
 }
 
 export const setShowCost = (showCost: boolean) => {
